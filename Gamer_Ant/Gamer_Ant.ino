@@ -50,7 +50,11 @@ void loop() {
   #endif
   
   if (gamer.isPressed(DOWN)) {
-    refresh = min(500, refresh * 2);
+    if (refresh <= 0) {
+      refresh = 1;
+    } else {
+      refresh = min(2048, refresh * 2);
+    }
   } else if (gamer.isPressed(UP)) {
     refresh = max(0, refresh / 2);
   } 
