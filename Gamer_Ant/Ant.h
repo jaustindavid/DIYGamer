@@ -16,11 +16,10 @@ class Ant {
     }
     
     void init() {
-      init(random(0, MAX_X+1), random(0, MAX_Y+1), random(0,4));
+      init(random(0, BM_SIDE), random(0, BM_SIDE), random(0,4));
     }
 
-    void walk(Gamer* gamer) {
-      // blink(gamer);
+    void walk(BitMatrix *board) {
 
       #ifdef DEBUGGING
         Serial.print("ant: ");
@@ -31,7 +30,7 @@ class Ant {
         Serial.println(dir);
       #endif
       
-      if (gamer->display[x][y]) {
+      if (board->get(x,y)) {
         #ifdef DEBUGGING
           Serial.println("high");
         #endif
@@ -43,7 +42,7 @@ class Ant {
         turn(RIGHT);
       }
       
-      gamer->display[x][y] = !gamer->display[x][y];
+      board->set(x,y,!board->get(x,y));
       step();
     }
     
@@ -88,30 +87,16 @@ class Ant {
     void step() {
       switch (dir) {
         case UP:
-          y = (y == 0 ? MAX_Y : y - 1);
+          y = (y == 0 ? BM_SIDE - 1 : y - 1);
           break;
         case LEFT:
-          x = (x == 0 ? MAX_X : x - 1);
+          x = (x == 0 ? BM_SIDE - 1 : x - 1);
           break;
         case DOWN:
-          y = (y == MAX_Y ? 0 : y + 1);
+          y = (y == BM_SIDE - 1 ? 0 : y + 1);
           break;
         case RIGHT:
-          x = (x == MAX_Y ? 0 : x + 1);
+          x = (x == BM_SIDE - 1 ? 0 : x + 1);
       }
     } // step()
-    
-    
-    void blink(Gamer* gamer) {
-      // byte color = gamer->display[x][y];
-      
-      // gamer->display[x][y] = LOW;
-      for (byte i = 0; i < 4; i++) {
-        gamer->display[x][y] = !gamer->display[x][y];
-        gamer->updateDisplay();
-        delay(100);
-      }
-      
-      // gamer->display[x][y] = color;
-    }
 };

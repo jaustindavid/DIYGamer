@@ -11,26 +11,34 @@
   
 */
 
+
+#define refresh 16
+
+#undef DEBUGGING
+
 #include <Gamer.h>
 
-#define MAX_X 7
-#define MAX_Y 7
-#undef DEBUGGING
+#define BM_SIDE 32
+#include "BitMatrix.h"
 
 #include "Ant.h"
 
+
+
 Gamer gamer;
 Ant ant;
-int refresh = 32;
+BitMatrix board;
 
 void setup() {
   #ifdef DEBUGGING
     Serial.begin(115200);
   #endif
+  
   randomSeed(gamer.ldrValue());
   ant.init();
   gamer.begin();
-  resetBoard();
+  board.reset();
+  board.print();
 }
 
 
@@ -40,43 +48,75 @@ void loop() {
   #endif
   
   if (gamer.isPressed(START)) {
-    resetBoard();
+    board.reset();
   }
   
-  ant.walk(&gamer);
-  gamer.updateDisplay();
+  for (byte i = 0; i < 4; i++) {
+    if (checkViewport())
+      updateDisplay();
+    delay(refresh);
+  }
+  ant.walk(&board);
+  updateDisplay();
+  
   #ifdef DEBUGGING
-    printBoard();
+    board.print();
   #endif
+}
+
+
+void printViewport(byte x, byte y) {
+  #ifdef DEBUGGING
+  Serial.print("Viewport: (");
+  Serial.print(x);
+  Serial.print(",");
+  Serial.print(y);
+  Serial.println(")");
+  #endif
+}
+
+
+static int x = 0;
+static int y = 0;
+#define VIEWPORT 8 // i can see this many pixels
+
+
+bool checkViewport() {
+  bool updateMe = false;
+  
+  // (x, y) is the real offset of the viewport into the board
   
   if (gamer.isPressed(DOWN)) {
-    if (refresh <= 0) {
-      refresh = 1;
-    } else {
-      refresh = min(2048, refresh * 2);
-    }
+    y++;
+    if (y >= BM_SIDE - VIEWPORT) { y = 0; }
+    printViewport(x,y);
+    updateMe = true;
   } else if (gamer.isPressed(UP)) {
-    refresh = max(0, refresh / 2);
-  } 
+    y--;
+    if (y < 0) { y = BM_SIDE - VIEWPORT; } 
+    printViewport(x,y);
+    updateMe = true;
+  } else if (gamer.isPressed(LEFT)) {
+    x--;
+    if (x < 0) { x = BM_SIDE - VIEWPORT; }
+    printViewport(x,y);
+    updateMe = true;
+  } else if (gamer.isPressed(RIGHT)) {
+    x++;
+    if (x >= BM_SIDE - VIEWPORT) { x = 0; }
+    printViewport(x,y);
+    updateMe = true;
+  }
   
-  delay(refresh);
-}
+  return updateMe;
+} // void checkViewport(bool board[BOARD_SIZE][BOARD_SIZE]) 
 
 
-void resetBoard() {
-  for (byte x = 0; x <= MAX_X; x++) {
-    for (byte y = 0; y <= MAX_Y; y++) {
-      gamer.display[x][y] = 0;// random(0,2);
+void updateDisplay() {
+  for (byte gamerX = 0; gamerX < VIEWPORT; gamerX ++) {
+    for (byte gamerY = 0; gamerY < VIEWPORT; gamerY ++) {
+      gamer.display[gamerX][gamerY] = board.get(x + gamerX, y + gamerY); 
     }
   }
-}
-
-
-void printBoard() {
-  for (byte x = 0; x <= MAX_X; x++) {
-    for (byte y = 0; y <= MAX_Y; y++) {
-      Serial.print(gamer.display[x][y] ? "|x|" : "| |");
-    }
-    Serial.println();
-  }
+  gamer.updateDisplay();
 }
